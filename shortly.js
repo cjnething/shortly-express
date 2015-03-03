@@ -23,24 +23,24 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
 
-app.get('/', 
+app.get('/',
 function(req, res) {
   res.render('index');
 });
 
-app.get('/create', 
+app.get('/create',
 function(req, res) {
   res.render('index');
 });
 
-app.get('/links', 
+app.get('/links',
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
 });
 
-app.post('/links', 
+app.post('/links',
 function(req, res) {
   var uri = req.body.url;
 
@@ -77,8 +77,61 @@ function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
+app.get('/login', function(req, res){
+  res.render('login')
+});
+
+app.post('/login', function(req, res){
+  var username = req.body.username;
+  var password = req.body.password;
+
+  if(username === 'demo' && password == 'demo'){
+    // req.session.regenerate(function(){
+    // req.session.user = username;
+    res.redirect('index');
+  }else{
+   res.redirect('login');
+  }
+});
+
+app.get('/signup', function(req, res){
+  res.render('signup')
+});
+
+app.post('/signup', function(req, res){
+  var username = req.body.username;
+  var password = req.body.password;
 
 
+
+  new User({ username: username, password: password }).fetch().then(function(found) {
+  console.log("what is user found", found);
+  // if (found) {
+  //   res.send(200, found.attributes);
+  // } else {
+  //   util.getUrlTitle(uri, function(err, title) {
+  //     if (err) {
+  //       console.log('Error reading URL heading: ', err);
+  //       return res.send(404);
+  //     }
+
+  //     var link = new Link({
+  //       url: uri,
+  //       title: title,
+  //       base_url: req.headers.origin
+  //     });
+
+  //     link.save().then(function(newLink) {
+  //       Links.add(newLink);
+  //       res.send(200, newLink);
+  //     });
+  //   });
+  // }
+});
+
+
+  res.redirect('login');
+});
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail

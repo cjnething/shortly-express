@@ -2,6 +2,8 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
+var bcrypt = require('bcrypt-nodejs');
+
 
 
 var db = require('./app/config');
@@ -67,6 +69,7 @@ function(req, res) {
 
         link.save().then(function(newLink) {
           Links.add(newLink);
+          console.log('Links', Links);
           res.send(200, newLink);
         });
       });
@@ -81,17 +84,38 @@ app.get('/login', function(req, res){
   res.render('login')
 });
 
-app.post('/login', function(req, res){
+app.post('/login', function(req, response){
   var username = req.body.username;
   var password = req.body.password;
 
-  if(username === 'demo' && password == 'demo'){
-    // req.session.regenerate(function(){
-    // req.session.user = username;
-    res.redirect('index');
-  }else{
-   res.redirect('login');
-  }
+  new User({username: username}).fetch().then(function(found){
+    if( found ){
+      bcrypt.hash(password, found.attributes.salt, null, function(err, res) {
+        if (err) {
+          console.log(err);
+        } else {
+          if( found.attributes.hash === res ){
+            response.redirect('index');
+          }else{
+            console.log('Invalid password');
+            response.redirect('login');
+          }
+      }
+    })
+      // console.log("Successful login",found.attributes.salt);
+    } else {
+      console.log('Invalid username');
+      response.redirect('login');
+    }
+
+  // if(username === 'demo' && password == 'demo'){
+  //   // req.session.regenerate(function(){
+  //   // req.session.user = username;
+  //   res.redirect('index');
+  // }else{
+  //  res.redirect('login');
+  // }
+  })
 });
 
 app.get('/signup', function(req, res){
@@ -102,13 +126,17 @@ app.post('/signup', function(req, res){
   var username = req.body.username;
   var password = req.body.password;
 
+  new User({username: username}).fetch().then(function(found){
 
-
-  new User({ username: username, password: password }).fetch().then(function(found) {
-  console.log("what is user found", found);
-  // if (found) {
-  //   res.send(200, found.attributes);
-  // } else {
+  if (found) {
+    res.send(200, found.attributes);
+  } else {
+    var incomingUser = new User({ username: username });
+    incomingUser.encrypt(password, function(){
+      incomingUser.save().then(function(newUser) {
+        Users.add(newUser);
+        res.send(200, newUser);
+      });});
   //   util.getUrlTitle(uri, function(err, title) {
   //     if (err) {
   //       console.log('Error reading URL heading: ', err);
@@ -121,15 +149,19 @@ app.post('/signup', function(req, res){
   //       base_url: req.headers.origin
   //     });
 
-  //     link.save().then(function(newLink) {
-  //       Links.add(newLink);
-  //       res.send(200, newLink);
+  //     incomingUser.save().then(function(newUser) {
+  //       console.log('newUser', newUser);
+  //       Users.add(newUser);
+  //       console.log('users', Users);
+  //       res.send(200, newUser);
   //     });
-  //   });
+  // //   });
   // }
-});
+//});
+}
+})
 
-
+  // })
   res.redirect('login');
 });
 

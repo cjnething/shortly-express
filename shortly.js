@@ -3,6 +3,7 @@ var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
 var bcrypt = require('bcrypt-nodejs');
+var session = require('express-session');
 
 
 
@@ -23,6 +24,12 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
+app.use(session({
+  // genid: function(req) {
+  //   return genuuid() // use UUIDs for session IDs
+  // },
+  secret: 'keyboard cat'
+}))
 
 
 app.get('/',
@@ -81,7 +88,9 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 app.get('/login', function(req, res){
-  res.render('login')
+  var test = req.session;
+  console.log(test);
+  res.render('login');
 });
 
 app.post('/login', function(req, response){
@@ -95,7 +104,10 @@ app.post('/login', function(req, response){
           console.log(err);
         } else {
           if( found.attributes.hash === res ){
+            req.session.regenerate(function(){
+            req.session.username = username;
             response.redirect('index');
+          });
           }else{
             console.log('Invalid password');
             response.redirect('login');
